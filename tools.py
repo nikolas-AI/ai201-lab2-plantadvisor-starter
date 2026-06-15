@@ -11,6 +11,36 @@ with open(os.path.join(DATA_PATH, "plants.json"), encoding="utf-8") as f:
 with open(os.path.join(DATA_PATH, "seasons.json"), encoding="utf-8") as f:
     _season_data = json.load(f)
 
+
+def _normalize(name: str) -> str:
+    """Single normalization path for both stored names and user input."""
+    return name.strip().lower()
+
+
+def _build_name_index(db: dict) -> dict:
+    """
+    Map every searchable name (normalized) to its plant slug, built once at
+    module load. Names are inserted lowest-priority first so that on a collision
+    the higher-priority source overwrites it, preserving the spec's search order:
+    direct key > display name > scientific name > alias.
+    """
+    index: dict[str, str] = {}
+    for slug, plant in db.items():
+        for alias in plant.get("aliases", []):
+            index[_normalize(alias)] = slug
+    for slug, plant in db.items():
+        if plant.get("scientific_name"):
+            index[_normalize(plant["scientific_name"])] = slug
+    for slug, plant in db.items():
+        index[_normalize(plant["display_name"])] = slug
+    for slug in db:
+        index[_normalize(slug)] = slug
+    return index
+
+
+# Normalized name -> slug, computed once so each lookup is an O(1) dict hit.
+_name_index = _build_name_index(_plant_db)
+
 # Maps calendar months to seasons for auto-detection.
 _MONTH_TO_SEASON = {
     12: "winter", 1: "winter", 2: "winter",
@@ -52,10 +82,19 @@ def lookup_plant(plant_name: str) -> dict:
 
     Before writing code, complete the lookup_plant section of specs/tool-functions-spec.md.
     """
+    normalized = _normalize(plant_name)
+    slug = _name_index.get(normalized)
+    if slug is not None:
+        return {"found": True, "plant": _plant_db[slug]}
+
     return {
         "found": False,
-        "name": plant_name,
-        "message": "Plant lookup not yet implemented. Complete Milestone 1.",
+        "name": normalized,
+        "message": (
+            f"No plant matching '{normalized}' found in the database — do not "
+            "invent specific care instructions, instead offer general guidance "
+            "for this plant type and acknowledge what you don't know."
+        ),
     }
 
 

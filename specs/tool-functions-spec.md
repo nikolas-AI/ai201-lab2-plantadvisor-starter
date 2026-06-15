@@ -73,7 +73,7 @@ the broadest net, so they go last.
 *Aliases are stored as a list of strings. How will you check if the normalized input matches any alias in the list? Write your approach in pseudocode or plain English.*
 
 ```
-[your answer here]
+first we build a normalized lookup list. Then we build the index once at module load, after plant database is loaded.
 ```
 
 ---
@@ -83,7 +83,7 @@ the broadest net, so they go last.
 *When a plant isn't found, the agent will read your message and use it to decide what to tell the user. Write the exact string you'll return — make it useful to the agent, not just to a human reading logs.*
 
 ```
-[your answer here]
+No plant matching '{plant_name}' found in the database — do not invent specific care instructions, instead offer general guidance for this plant type and acknowledge what you don't know.
 ```
 
 ---
